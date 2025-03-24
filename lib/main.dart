@@ -39,7 +39,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     // Listen to ThemeProvider
     final themeProvider = Provider.of<ThemeProvider>(context);
-    
+
     return MaterialApp(
       title: 'To-Do List',
       debugShowCheckedModeBanner: false,
@@ -70,7 +70,9 @@ class MyApp extends StatelessWidget {
         ),
       ),
       themeMode: themeProvider.themeMode, // Use theme from provider
-      initialRoute: '/',
+      // Set home to SplashScreen instead of using initialRoute
+      home: const SplashScreen(),
+
       onGenerateRoute: (settings) {
         // Define route generation with parameters
         if (settings.name == '/add-todo-screen') {
@@ -87,7 +89,7 @@ class MyApp extends StatelessWidget {
         }
         return null;
       },
-      routes: {'/': (context) => const TodoList()},
+      routes: {'/home': (context) => const TodoList()},
       // Global error handling
       builder: (context, child) {
         return ScrollConfiguration(
@@ -97,6 +99,67 @@ class MyApp extends StatelessWidget {
           child: child!,
         );
       },
+    );
+  }
+}
+
+// Create a new SplashScreen class
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Navigate to the main screen after a delay
+    Future.delayed(const Duration(seconds: 2), () {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const TodoList()),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+            colors: [Colors.blue, Colors.lightBlueAccent],
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // App icon
+            Image.asset('assets/icon/image.png', width: 150, height: 150),
+            const SizedBox(height: 20),
+            // App name
+            const Text(
+              'To-Do List',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Loading indicator
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

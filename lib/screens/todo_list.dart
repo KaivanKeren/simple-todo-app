@@ -4,12 +4,7 @@ import 'package:android_project/models/save_task.dart';
 import 'package:android_project/theme_provider.dart';
 
 // Define filter types as an enum for better type safety
-enum TaskFilter {
-  all,
-  completed,
-  active,
-  dueToday,
-}
+enum TaskFilter { all, completed, active, dueToday }
 
 class TodoList extends StatefulWidget {
   const TodoList({super.key});
@@ -21,7 +16,7 @@ class TodoList extends StatefulWidget {
 class _TodoListState extends State<TodoList> {
   // Current active filter
   TaskFilter _currentFilter = TaskFilter.all;
-  
+
   // Filter label for the app bar
   String get _filterLabel {
     switch (_currentFilter) {
@@ -71,8 +66,8 @@ class _TodoListState extends State<TodoList> {
                   themeProvider.themeMode == ThemeMode.light
                       ? Icons.dark_mode
                       : themeProvider.themeMode == ThemeMode.dark
-                          ? Icons.light_mode
-                          : Icons.brightness_auto,
+                      ? Icons.light_mode
+                      : Icons.brightness_auto,
                 );
               },
             ),
@@ -95,7 +90,7 @@ class _TodoListState extends State<TodoList> {
       body: Consumer<SaveTask>(
         builder: (context, taskProvider, child) {
           final filteredTasks = _getFilteredTasks(taskProvider.tasks);
-          
+
           if (filteredTasks.isEmpty) {
             return _buildEmptyState();
           }
@@ -150,7 +145,7 @@ class _TodoListState extends State<TodoList> {
   List<dynamic> _getFilteredTasks(List<dynamic> allTasks) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    
+
     switch (_currentFilter) {
       case TaskFilter.all:
         return allTasks;
@@ -174,186 +169,192 @@ class _TodoListState extends State<TodoList> {
   Widget _buildTaskTile(BuildContext context, dynamic task, int index) {
     final theme = Theme.of(context);
 
-    return InkWell(
-      onTap: () {
-        _showTaskDetails(context, task, index);
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        child: Row(
-          children: [
-            Checkbox(
-              value: task.isCompleted,
-              shape: const CircleBorder(),
-              activeColor: Colors.green,
-              onChanged: (_) {
-                // Store the current state before toggling
-                final bool wasCompleted = task.isCompleted;
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: () {
+          _showTaskDetails(context, task, index);
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          child: Row(
+            children: [
+              Checkbox(
+                value: task.isCompleted,
+                shape: const CircleBorder(),
+                activeColor: Colors.green,
+                onChanged: (_) {
+                  // Store the current state before toggling
+                  final bool wasCompleted = task.isCompleted;
 
-                // Toggle the task state
-                context.read<SaveTask>().checkTask(index);
+                  // Toggle the task state
+                  context.read<SaveTask>().checkTask(index);
 
-                // Show the appropriate message based on the previous state
-                if (!wasCompleted) {
-                  // Show completion message when task is being checked
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Row(
-                        children: [
-                          const Icon(Icons.check_circle, color: Colors.white),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Text(
-                                  'Great job!',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                Text(
-                                  'You completed "${task.title}" 🎉',
-                                  style: const TextStyle(fontSize: 13),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
+                  // Show the appropriate message based on the previous state
+                  if (!wasCompleted) {
+                    // Show completion message when task is being checked
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Row(
+                          children: [
+                            const Icon(Icons.check_circle, color: Colors.white),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text(
+                                    'Great job!',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    'You completed "${task.title}" 🎉',
+                                    style: const TextStyle(fontSize: 13),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        backgroundColor: Colors.green.shade600,
+                        behavior: SnackBarBehavior.floating,
+                        duration: const Duration(seconds: 2),
+                        action: SnackBarAction(
+                          label: 'UNDO',
+                          textColor: Colors.white,
+                          onPressed: () {
+                            context.read<SaveTask>().checkTask(index);
+                          },
+                        ),
                       ),
-                      backgroundColor: Colors.green.shade600,
-                      behavior: SnackBarBehavior.floating,
-                      duration: const Duration(seconds: 2),
-                      action: SnackBarAction(
-                        label: 'UNDO',
-                        textColor: Colors.white,
-                        onPressed: () {
-                          context.read<SaveTask>().checkTask(index);
-                        },
-                      ),
-                    ),
-                  );
-                } else {
-                  // Show a different message when task is being unchecked
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Row(
-                        children: [
-                          const Icon(Icons.replay, color: Colors.white),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Task "${task.title}" marked as incomplete',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                    );
+                  } else {
+                    // Show a different message when task is being unchecked
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Row(
+                          children: [
+                            const Icon(Icons.replay, color: Colors.white),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Task "${task.title}" marked as incomplete',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        backgroundColor: Colors.orange.shade700,
+                        behavior: SnackBarBehavior.floating,
+                        duration: const Duration(seconds: 2),
+                        action: SnackBarAction(
+                          label: 'UNDO',
+                          textColor: Colors.white,
+                          onPressed: () {
+                            context.read<SaveTask>().checkTask(index);
+                          },
+                        ),
                       ),
-                      backgroundColor: Colors.orange.shade700,
-                      behavior: SnackBarBehavior.floating,
-                      duration: const Duration(seconds: 2),
-                      action: SnackBarAction(
-                        label: 'UNDO',
-                        textColor: Colors.white,
-                        onPressed: () {
-                          context.read<SaveTask>().checkTask(index);
-                        },
-                      ),
-                    ),
-                  );
-                }
-              },
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    task.title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight:
-                          task.isCompleted
-                              ? FontWeight.normal
-                              : FontWeight.w500,
-                      decoration:
-                          task.isCompleted
-                              ? TextDecoration.lineThrough
-                              : TextDecoration.none,
-                      color:
-                          task.isCompleted
-                              ? theme.textTheme.bodyMedium?.color?.withOpacity(
-                                0.6,
-                              )
-                              : theme.textTheme.bodyMedium?.color,
-                    ),
-                  ),
-                  if (task.description != null && task.description.isNotEmpty)
+                    );
+                  }
+                },
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      task.description,
+                      task.title,
                       style: TextStyle(
-                        fontSize: 14,
-                        color: theme.textTheme.bodySmall?.color,
-                        overflow: TextOverflow.ellipsis,
+                        fontSize: 16,
+                        fontWeight:
+                            task.isCompleted
+                                ? FontWeight.normal
+                                : FontWeight.w500,
+                        decoration:
+                            task.isCompleted
+                                ? TextDecoration.lineThrough
+                                : TextDecoration.none,
+                        color:
+                            task.isCompleted
+                                ? theme.textTheme.bodyMedium?.color
+                                    ?.withOpacity(0.6)
+                                : theme.textTheme.bodyMedium?.color,
                       ),
-                      maxLines: 1,
                     ),
-                  if (task.dueDate != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.calendar_today,
-                            size: 12,
-                            color: _getDueDateColor(task.dueDate),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _formatDueDate(task.dueDate),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: _getDueDateColor(task.dueDate),
-                            ),
-                          ),
-                          // Add time display if available (hour and minute are not 0)
-                          if (_hasTimeComponent(task.dueDate)) ...[
-                            const SizedBox(width: 8),
+                    if (task.description != null && task.description.isNotEmpty)
+                      Text(
+                        task.description,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: theme.textTheme.bodySmall?.color,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        maxLines: 1,
+                      ),
+                    if (task.dueDate != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Row(
+                          children: [
                             Icon(
-                              Icons.access_time,
+                              Icons.calendar_today,
                               size: 12,
                               color: _getDueDateColor(task.dueDate),
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              _formatDueTime(task.dueDate),
+                              _formatDueDate(task.dueDate),
                               style: TextStyle(
                                 fontSize: 12,
                                 color: _getDueDateColor(task.dueDate),
                               ),
                             ),
+                            // Add time display if available (hour and minute are not 0)
+                            if (_hasTimeComponent(task.dueDate)) ...[
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.access_time,
+                                size: 12,
+                                color: _getDueDateColor(task.dueDate),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _formatDueTime(task.dueDate),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: _getDueDateColor(task.dueDate),
+                                ),
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              onPressed: () async {
-                final shouldDelete = await _showDeleteConfirmation(context);
-                if (shouldDelete) {
-                  context.read<SaveTask>().removeTask(task);
-                }
-              },
-              splashRadius: 24,
-              tooltip: 'Delete task',
-            ),
-          ],
+              IconButton(
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () async {
+                  final shouldDelete = await _showDeleteConfirmation(context);
+                  if (shouldDelete) {
+                    context.read<SaveTask>().removeTask(task);
+                  }
+                },
+                splashRadius: 24,
+                tooltip: 'Delete task',
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -375,7 +376,7 @@ class _TodoListState extends State<TodoList> {
   Widget _buildEmptyState() {
     String message;
     IconData icon;
-    
+
     switch (_currentFilter) {
       case TaskFilter.all:
         message = 'No tasks yet';
@@ -399,11 +400,7 @@ class _TodoListState extends State<TodoList> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            icon,
-            size: 80,
-            color: Colors.grey.shade400,
-          ),
+          Icon(icon, size: 80, color: Colors.grey.shade400),
           const SizedBox(height: 16),
           Text(
             message,
@@ -486,10 +483,9 @@ class _TodoListState extends State<TodoList> {
                     icon: const Icon(Icons.edit),
                     onPressed: () {
                       Navigator.pop(context);
-                      Navigator.of(context).pushNamed(
-                        '/edit-todo-screen',
-                        arguments: task,
-                      );
+                      Navigator.of(
+                        context,
+                      ).pushNamed('/edit-todo-screen', arguments: task);
                     },
                   ),
                 ],
@@ -498,13 +494,6 @@ class _TodoListState extends State<TodoList> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Checkbox(
-                    value: task.isCompleted,
-                    onChanged: (_) {
-                      context.read<SaveTask>().checkTask(index);
-                      Navigator.pop(context);
-                    },
-                  ),
                   Text(
                     task.title,
                     style: TextStyle(
