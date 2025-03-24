@@ -2,18 +2,57 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:android_project/models/save_task.dart';
 
-class TodoList extends StatelessWidget {
+// Define filter types as an enum for better type safety
+enum TaskFilter {
+  all,
+  completed,
+  active,
+  dueToday,
+}
+
+class TodoList extends StatefulWidget {
   const TodoList({super.key});
 
   @override
+  State<TodoList> createState() => _TodoListState();
+}
+
+class _TodoListState extends State<TodoList> {
+  // Current active filter
+  TaskFilter _currentFilter = TaskFilter.all;
+  
+  // Filter label for the app bar
+  String get _filterLabel {
+    switch (_currentFilter) {
+      case TaskFilter.all:
+        return 'All Tasks';
+      case TaskFilter.completed:
+        return 'Completed';
+      case TaskFilter.active:
+        return 'Active';
+      case TaskFilter.dueToday:
+        return 'Due Today';
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Rest of the build method remains unchanged
     return Scaffold(
-      // AppBar, FloatingActionButton, and the rest remain the same
       appBar: AppBar(
-        title: const Text(
-          'My Tasks',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'My Tasks',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            if (_currentFilter != TaskFilter.all)
+              Text(
+                'Filtered: $_filterLabel',
+                style: const TextStyle(fontSize: 12),
+              ),
+          ],
         ),
         elevation: 0,
         actions: [
@@ -22,6 +61,7 @@ class TodoList extends StatelessWidget {
             onPressed: () {
               _showFilterOptions(context);
             },
+            tooltip: 'Filter tasks',
           ),
         ],
       ),
@@ -35,17 +75,21 @@ class TodoList extends StatelessWidget {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       body: Consumer<SaveTask>(
-        builder: (context, task, child) {
-          if (task.tasks.isEmpty) {
+        builder: (context, taskProvider, child) {
+          final filteredTasks = _getFilteredTasks(taskProvider.tasks);
+          
+          if (filteredTasks.isEmpty) {
             return _buildEmptyState();
           }
 
           return ListView.separated(
             padding: const EdgeInsets.only(bottom: 80),
-            itemCount: task.tasks.length,
+            itemCount: filteredTasks.length,
             separatorBuilder: (context, index) => const Divider(height: 1),
             itemBuilder: (BuildContext context, index) {
-              final currentTask = task.tasks[index];
+              final currentTask = filteredTasks[index];
+              // Find the original index in the full tasks list for proper handling
+              final originalIndex = taskProvider.tasks.indexOf(currentTask);
 
               return Dismissible(
                 key: Key(currentTask.id.toString()),
@@ -75,13 +119,38 @@ class TodoList extends StatelessWidget {
                     ),
                   );
                 },
-                child: _buildTaskTile(context, currentTask, index),
+                child: _buildTaskTile(context, currentTask, originalIndex),
               );
             },
           );
         },
       ),
     );
+  }
+
+  // Filter tasks based on current filter
+  List<dynamic> _getFilteredTasks(List<dynamic> allTasks) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    
+    switch (_currentFilter) {
+      case TaskFilter.all:
+        return allTasks;
+      case TaskFilter.completed:
+        return allTasks.where((task) => task.isCompleted).toList();
+      case TaskFilter.active:
+        return allTasks.where((task) => !task.isCompleted).toList();
+      case TaskFilter.dueToday:
+        return allTasks.where((task) {
+          if (task.dueDate == null) return false;
+          final taskDate = DateTime(
+            task.dueDate.year,
+            task.dueDate.month,
+            task.dueDate.day,
+          );
+          return taskDate == today;
+        }).toList();
+    }
   }
 
   Widget _buildTaskTile(BuildContext context, dynamic task, int index) {
@@ -284,20 +353,42 @@ class TodoList extends StatelessWidget {
     return '$hour:$minute';
   }
 
-  // The rest of the methods remain unchanged
+  // Display the empty state with a message based on active filter
   Widget _buildEmptyState() {
+    String message;
+    IconData icon;
+    
+    switch (_currentFilter) {
+      case TaskFilter.all:
+        message = 'No tasks yet';
+        icon = Icons.check_circle_outline;
+        break;
+      case TaskFilter.completed:
+        message = 'No completed tasks';
+        icon = Icons.check_circle;
+        break;
+      case TaskFilter.active:
+        message = 'No active tasks';
+        icon = Icons.circle_outlined;
+        break;
+      case TaskFilter.dueToday:
+        message = 'No tasks due today';
+        icon = Icons.calendar_today;
+        break;
+    }
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.check_circle_outline,
+            icon,
             size: 80,
             color: Colors.grey.shade400,
           ),
           const SizedBox(height: 16),
           Text(
-            'No tasks yet',
+            message,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -306,9 +397,23 @@ class TodoList extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Add a new task by tapping the + button',
+            _currentFilter == TaskFilter.all
+                ? 'Add a new task by tapping the + button'
+                : 'Try selecting a different filter',
             style: TextStyle(color: Colors.grey.shade600),
           ),
+          if (_currentFilter != TaskFilter.all) ...[
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: () {
+                setState(() {
+                  _currentFilter = TaskFilter.all;
+                });
+              },
+              icon: const Icon(Icons.filter_list_off),
+              label: const Text('Show All Tasks'),
+            ),
+          ],
         ],
       ),
     );
@@ -464,32 +569,48 @@ class TodoList extends StatelessWidget {
               ListTile(
                 leading: const Icon(Icons.list),
                 title: const Text('All Tasks'),
+                selected: _currentFilter == TaskFilter.all,
+                selectedTileColor: Colors.blue.withOpacity(0.1),
                 onTap: () {
-                  // Implement filter functionality
+                  setState(() {
+                    _currentFilter = TaskFilter.all;
+                  });
                   Navigator.pop(context);
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.check_circle),
                 title: const Text('Completed'),
+                selected: _currentFilter == TaskFilter.completed,
+                selectedTileColor: Colors.blue.withOpacity(0.1),
                 onTap: () {
-                  // Implement filter functionality
+                  setState(() {
+                    _currentFilter = TaskFilter.completed;
+                  });
                   Navigator.pop(context);
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.circle_outlined),
                 title: const Text('Active'),
+                selected: _currentFilter == TaskFilter.active,
+                selectedTileColor: Colors.blue.withOpacity(0.1),
                 onTap: () {
-                  // Implement filter functionality
+                  setState(() {
+                    _currentFilter = TaskFilter.active;
+                  });
                   Navigator.pop(context);
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.calendar_today),
                 title: const Text('Due Today'),
+                selected: _currentFilter == TaskFilter.dueToday,
+                selectedTileColor: Colors.blue.withOpacity(0.1),
                 onTap: () {
-                  // Implement filter functionality
+                  setState(() {
+                    _currentFilter = TaskFilter.dueToday;
+                  });
                   Navigator.pop(context);
                 },
               ),
