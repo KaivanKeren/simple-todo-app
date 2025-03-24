@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:android_project/models/save_task.dart';
+import 'package:android_project/theme_provider.dart';
 
 // Define filter types as an enum for better type safety
 enum TaskFilter {
@@ -62,6 +63,23 @@ class _TodoListState extends State<TodoList> {
               _showFilterOptions(context);
             },
             tooltip: 'Filter tasks',
+          ),
+          IconButton(
+            icon: Consumer<ThemeProvider>(
+              builder: (context, themeProvider, child) {
+                return Icon(
+                  themeProvider.themeMode == ThemeMode.light
+                      ? Icons.dark_mode
+                      : themeProvider.themeMode == ThemeMode.dark
+                          ? Icons.light_mode
+                          : Icons.brightness_auto,
+                );
+              },
+            ),
+            onPressed: () {
+              Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+            },
+            tooltip: 'Toggle Theme',
           ),
         ],
       ),
@@ -468,8 +486,10 @@ class _TodoListState extends State<TodoList> {
                     icon: const Icon(Icons.edit),
                     onPressed: () {
                       Navigator.pop(context);
-                      // Navigate to edit task screen with task data
-                      // Implementation depends on your routing setup
+                      Navigator.of(context).pushNamed(
+                        '/edit-todo-screen',
+                        arguments: task,
+                      );
                     },
                   ),
                 ],
