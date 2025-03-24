@@ -138,4 +138,6 @@ class SaveTask extends ChangeNotifier {
       'completionRate': total > 0 ? (completed / total * 100).toStringAsFixed(1) : '0',
     };
   }
+
+  void updateTaskById(String id, Task updatedTask) {}
 }
