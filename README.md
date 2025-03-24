@@ -18,8 +18,8 @@ A simple and elegant To-Do List application built with Flutter and Provider for 
 ## Installation
 1. Clone the repository:
    ```sh
-   git clone https://github.com/KaivanKeren/flutter-todo-list.git
-   cd flutter-todo-list
+   git clone https://github.com/KaivanKeren/simple-todo-app.git
+   cd simple-todo-app
    ```
 2. Install dependencies:
    ```sh
